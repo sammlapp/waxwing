@@ -1,3 +1,6 @@
 __pycache__
 viz_palettes.ipynb
 .DS_Store
+build/
+waxwing.egg-info/
+dist/
