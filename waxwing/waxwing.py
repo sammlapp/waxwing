@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 import matplotlib as mpl
 
+from . import palettes
+
 # define default style
 style = f"""
 axes.spines.top:   False
@@ -19,6 +21,7 @@ legend.fontsize:   8
 figure.dpi:        150
 savefig.dpi:       300
 savefig.bbox:      tight
+lines.linewidth:   0.8
 """
 
 style_dir = Path(mpl.get_configdir()) / "stylelib"
@@ -26,38 +29,75 @@ style_dir.mkdir(exist_ok=True)
 (style_dir / "waxwing.mplstyle").write_text(style)
 
 
-# Path to font inside your repo
-fonts = {
-    "Noto Sans": Path(__file__).parent.parent
-    / "fonts/Noto_Sans/NotoSans-VariableFont_wdth,wght.ttf",
-    "Source Sans 3": Path(__file__).parent.parent
-    / "fonts/Source_Sans_3/SourceSans3-VariableFont_wght.ttf",
-    "Source Serif 4": Path(__file__).parent.parent
-    / "fonts/Source_Serif_4/SourceSerif4-VariableFont_opsz,wght.ttf",
-    "Literata": Path(__file__).parent.parent
-    / "fonts/Literata/Literata-VariableFont_opsz,wght.ttf",
+from typing import Literal
+
+_fonts_dir = Path(__file__).parent / "fonts"
+
+# {family_name: {weight: path}}
+_font_files = {
+    "Noto Sans": {
+        "light": _fonts_dir / "Noto_Sans/static/NotoSans-Light.ttf",
+        "regular": _fonts_dir / "Noto_Sans/static/NotoSans-Regular.ttf",
+        "medium": _fonts_dir / "Noto_Sans/static/NotoSans-Medium.ttf",
+    },
+    "Source Sans 3": {
+        "light": _fonts_dir / "Source_Sans_3/static/SourceSans3-Light.ttf",
+        "regular": _fonts_dir / "Source_Sans_3/static/SourceSans3-Regular.ttf",
+        "medium": _fonts_dir / "Source_Sans_3/static/SourceSans3-Medium.ttf",
+    },
+    "Source Serif 4": {
+        "light": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Light.ttf",
+        "regular": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Regular.ttf",
+        "medium": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Medium.ttf",
+    },
+    "Literata": {
+        "light": _fonts_dir / "Literata/static/Literata-Light.ttf",
+        "regular": _fonts_dir / "Literata/static/Literata-Regular.ttf",
+        "medium": _fonts_dir / "Literata/static/Literata-Medium.ttf",
+    },
 }
-font_mpl_ids = {}
 
-for font_name, font_path in fonts.items():
-    # Register font with Matplotlib
-    font_manager.fontManager.addfont(str(font_path))
+# Register each weight file under a unique synthetic family name so that
+# font.family alone unambiguously selects the exact file (no weight heuristics).
+# e.g. "Source Sans 3 Light", "Source Sans 3 Regular", "Source Sans 3 Medium"
+for _family, _weights in _font_files.items():
+    for _weight_name, _path in _weights.items():
+        font_manager.fontManager.addfont(str(_path))
+        # Find the entry just added and rename it to the synthetic family name
+        _synthetic = f"{_family} {_weight_name.capitalize()}"
+        for _entry in font_manager.fontManager.ttflist:
+            if _entry.fname == str(_path):
+                object.__setattr__(_entry, "name", _synthetic)
+                break
 
-    # Get the actual font name (important!)
-    prop = font_manager.FontProperties(fname=str(font_path))
-    font_mpl_ids[font_name] = prop.get_name()
+FontName = Literal["Noto Sans", "Source Sans 3", "Source Serif 4", "Literata"]
+FontWeight = Literal["light", "regular", "medium"]
 
 
-def set_font(font_name):
-    if font_name not in font_mpl_ids:
+def set_font(font_name: FontName, weight: FontWeight = "regular") -> None:
+    """Set the global font family and weight for all plots.
+
+    Points font.family directly at the exact static font file for that weight,
+    bypassing Matplotlib's font matching heuristics entirely.
+
+    Args:
+        font_name: one of "Noto Sans", "Source Sans 3", "Source Serif 4", "Literata"
+        weight: "light", "regular", or "medium" (default "regular")
+    """
+    if font_name not in _font_files:
         raise ValueError(
-            f"Font '{font_name}' not found. Available fonts: {list(font_mpl_ids.keys())}"
+            f"Font '{font_name}' not found. Available fonts: {list(_font_files)}"
         )
-    plt.rcParams["font.family"] = font_mpl_ids[font_name]
+    if weight not in ("light", "regular", "medium"):
+        raise ValueError(
+            f"Weight must be 'light', 'regular', or 'medium', got '{weight}'"
+        )
+
+    plt.rcParams["font.family"] = f"{font_name} {weight.capitalize()}"
 
 
-def list_fonts():
-    return list(font_mpl_ids.keys())
+def list_fonts() -> list[str]:
+    return list(_font_files.keys())
 
 
 def set_figsize(w, h):
@@ -107,12 +147,113 @@ def trim_spines(ax=None, keep_right=False, keep_top=False):
             spine.set_bounds(visible[0], visible[-1])
 
 
+def move_axes_outward(ax=None, pad=10):
+    """
+    Move axes outward from the data region (Tufte-inspired styling).
+
+    Parameters
+    ----------
+    ax : matplotlib Axes, optional
+        Axis to modify. If None, uses current axis.
+    pad : float
+        Padding in points (visual offset of spines).
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    # move each visible axis outward
+    for spine in ax.spines.values():
+        if spine.get_visible():
+            spine.set_position(("outward", pad))
+
+    # Keep ticks only on visible spines
+    # ax.yaxis.set_ticks_position("left")
+    # ax.xaxis.set_ticks_position("bottom")
+
+    # Subtle tick styling (important for “breathing room” effect)
+    # ax.tick_params(direction="out", length=4, width=0.8)#, colors="#5e5246")
+
+    return ax
+
+
+def style_axes(ax=None, pad=10):
+    """
+    Trim axes to data and move outward from the data"""
+
+    if ax is None:
+        ax = plt.gca()
+    trim_spines(ax)
+    move_axes_outward(ax, pad=pad)
+    return ax
+
+
+def set_palette(palette):
+    if isinstance(palette, str):
+        if palette not in palettes.__all__:
+            raise ValueError(
+                f"Palette '{palette}' not found. Available palettes: {palettes.__all__}"
+            )
+        palette = getattr(palettes, palette)
+    plt.rcParams["axes.prop_cycle"] = mpl.cycler(color=palette)
+
+
 def set_default_styles():
     mpl.style.reload_library()
     plt.style.use("waxwing")
-    set_font("Source Sans 3")
+    set_font("Source Sans 3", "light")
     set_figsize(6.5, 3)  # default figure size for papers
 
     # Ensure that fonts are editble when saving PDFs
     plt.rcParams["pdf.fonttype"] = 42
     plt.rcParams["ps.fonttype"] = 42
+    set_palette("matcha")
+
+
+from matplotlib import pyplot as plt
+from matplotlib.font_manager import FontProperties
+
+
+def apply_typography(
+    ax=None,
+    fontproperties=None,
+    weight=None,
+):
+    """
+    Apply consistent typography to a Matplotlib axis without altering layout or visibility.
+
+    Parameters
+    ----------
+    ax : matplotlib.axes.Axes, optional
+        Axis to style. If None, uses current axis.
+    fontproperties : FontProperties, optional
+        Fully defined font properties object. If provided, overrides weight.
+    weight : str or int, optional
+        Font weight override (used if fontproperties is None).
+    """
+
+    if ax is None:
+        ax = plt.gca()
+
+    # Resolve FontProperties
+    if fontproperties is None:
+        fontproperties = FontProperties(weight=weight if weight else "regular")
+
+    # --- Axis labels + title ---
+    ax.title.set_fontproperties(fontproperties)
+    ax.xaxis.label.set_fontproperties(fontproperties)
+    ax.yaxis.label.set_fontproperties(fontproperties)
+
+    # --- Tick labels ---
+    for label in ax.get_xticklabels():
+        label.set_fontproperties(fontproperties)
+
+    for label in ax.get_yticklabels():
+        label.set_fontproperties(fontproperties)
+
+    # --- Legend (if exists) ---
+    legend = ax.get_legend()
+    if legend is not None:
+        for text in legend.get_texts():
+            text.set_fontproperties(fontproperties)
+
+    return ax

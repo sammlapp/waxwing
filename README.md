@@ -90,17 +90,21 @@ ax.set_prop_cycle(color=palettes.spring)
 
 # seaborn:
 sns.color_palette(palettes.savanna)
+
+# reversed colormap:
+palettes.waxwing[::-1]
 ```
 
 ### Categorical
 
 | Palette | Colors | Character |
 |---|---|---|
+| `wax` | 6 | yellow, red, green, gold, blue, violet |
 | `clay` | 5 | warm earth tones |
 | `fruit` | 5 | vibrant warm hues |
 | `matcha` | 5 | muted purples and pastels |
 | `earth` | 5 | dark browns and teal |
-| `lichen` | 7 | greens and ochre |
+| `lichen` | 8 | greens, ochre, and lavender |
 | `solid` | 5 | bold primaries |
 | `sport` | 5 | vivid cyan, purple, gold |
 
@@ -108,6 +112,7 @@ sns.color_palette(palettes.savanna)
 
 | Palette | Colors | Character |
 |---|---|---|
+| `waxwing` | 7 | warm taupe → off-white |
 | `twilight` | 6 | navy → lavender → grey |
 | `canopy` | 6 | forest green → cream |
 | `glacier` | 6 | deep blue → near-white |

@@ -3,6 +3,8 @@ __all__ = [
     "fruit",
     "spring",
     "sport",
+    "wax",
+    "waxwing",
     "coastline",
     "twilight",
     "savanna",
@@ -14,20 +16,37 @@ __all__ = [
     "lichen",
     "solid",
 ]
-clay = ["#f4f1de", "#e07a5f", "#3d405b", "#81b29a", "#f2cc8f"]
+
+
+wax = [
+    "#e0b94f",  # wax yellow (tail highlight)
+    "#b23a2f",  # wax red (berry accent)
+    "#63a751",  # wax green (leaf accent)
+    "#e59500",
+    "#64b9d3",  # blue
+    "#825bde",
+]
+clay = [
+    "#f2cc8f",
+    "#e07a5f",
+    "#3d405b",
+    "#81b29a",
+    "#f4f1de",
+]
 
 fruit = ["#8cb369", "#f4e285", "#f4a259", "#5b8e7d", "#bc4b51"]
 
-matcha = ["#a491d3", "#818aa3", "#c5dca0", "#f5f2b8", "#f9dad0"]
+matcha = ["#a491d3", "#818aa3", "#c5dca0", "#f5f2b8", "#eaaf88"]
 
 earth = ["#26231D", "#4f6974", "#eae0d5", "#c6ac8f", "#5e503f"]
 
 lichen = [
-    "#8b9d83",
+    "#98b38c",
     "#d4e0ce",
     "#EAF493",
     "#E0AB73",
-    "#6a7b76",
+    "#6d807f",
+    "#BDAACB",
     "#3a4e48",
     "#e8e8e8",
 ]
@@ -102,6 +121,8 @@ twilight = ["#1f2a44", "#3e4c6d", "#6d7f8f", "#b8a9c9", "#efdded", "#e6e6e6"]
 canopy = ["#1b2a1f", "#355e3b", "#4f7942", "#7ea16b", "#b5c99a", "#e0e6d6"]
 
 glacier = ["#0b1320", "#2a4d69", "#4b86b4", "#adcbe3", "#e7eff6", "#f4f9fc"]
+
+waxwing = ["#5e5246", "#8f7a63", "#bfa58a", "#d8c3a5", "#e6d5b8", "#f2e8d5", "#fbf7ef"]
 
 # diverging
 savanna = ["#6b4f3a", "#a47551", "#c2a878", "#d9cba3", "#8a9a5b", "#465532"]
