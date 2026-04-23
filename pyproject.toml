@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "waxwing"
+version = "0.1.0"
+description = "Matplotlib utilities and color palettes for publication-ready figures"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+dependencies = ["matplotlib"]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/waxwing"
+
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.setuptools.package-data]
+waxwing = ["fonts/**/*"]
