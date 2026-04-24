@@ -1,16 +1,16 @@
-from matplotlib import font_manager
-import matplotlib.pyplot as plt
 from pathlib import Path
+from typing import Literal
+
 import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib import font_manager
 
 from . import palettes
 
 # define default style
-style = f"""
+_style = f"""
 axes.spines.top:   False
 axes.spines.right: False
-axes.xmargin:      0
-axes.ymargin:      0
 font.family:       sans-serif
 font.size:         9
 axes.labelsize:    9
@@ -21,15 +21,22 @@ legend.fontsize:   8
 figure.dpi:        150
 savefig.dpi:       300
 savefig.bbox:      tight
-lines.linewidth:   0.8
+axes.linewidth:    0.5
+xtick.minor.width: 0.5
+ytick.minor.width: 0.5
 """
 
-style_dir = Path(mpl.get_configdir()) / "stylelib"
-style_dir.mkdir(exist_ok=True)
-(style_dir / "waxwing.mplstyle").write_text(style)
+_weight_to_lineweight = {
+    "light": 0.4,
+    "book": 0.6,
+    "regular": 0.8,
+    "medium": 1,
+}
 
+_style_dir = Path(mpl.get_configdir()) / "stylelib"
+_style_dir.mkdir(exist_ok=True)
+(_style_dir / "waxwing.mplstyle").write_text(_style)
 
-from typing import Literal
 
 _fonts_dir = Path(__file__).parent / "fonts"
 
@@ -37,21 +44,25 @@ _fonts_dir = Path(__file__).parent / "fonts"
 _font_files = {
     "Noto Sans": {
         "light": _fonts_dir / "Noto_Sans/static/NotoSans-Light.ttf",
+        "book": _fonts_dir / "Noto_Sans/static/NotoSans-Book.ttf",
         "regular": _fonts_dir / "Noto_Sans/static/NotoSans-Regular.ttf",
         "medium": _fonts_dir / "Noto_Sans/static/NotoSans-Medium.ttf",
     },
     "Source Sans 3": {
         "light": _fonts_dir / "Source_Sans_3/static/SourceSans3-Light.ttf",
+        "book": _fonts_dir / "Source_Sans_3/static/SourceSans3-Book.ttf",
         "regular": _fonts_dir / "Source_Sans_3/static/SourceSans3-Regular.ttf",
         "medium": _fonts_dir / "Source_Sans_3/static/SourceSans3-Medium.ttf",
     },
     "Source Serif 4": {
         "light": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Light.ttf",
+        "book": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Book.ttf",
         "regular": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Regular.ttf",
         "medium": _fonts_dir / "Source_Serif_4/static/SourceSerif4-Medium.ttf",
     },
     "Literata": {
         "light": _fonts_dir / "Literata/static/Literata-Light.ttf",
+        "book": _fonts_dir / "Literata/static/Literata-Book.ttf",
         "regular": _fonts_dir / "Literata/static/Literata-Regular.ttf",
         "medium": _fonts_dir / "Literata/static/Literata-Medium.ttf",
     },
@@ -71,10 +82,14 @@ for _family, _weights in _font_files.items():
                 break
 
 FontName = Literal["Noto Sans", "Source Sans 3", "Source Serif 4", "Literata"]
-FontWeight = Literal["light", "regular", "medium"]
+FontWeight = Literal["light", "regular", "medium", "book"]
 
 
-def set_font(font_name: FontName, weight: FontWeight = "regular") -> None:
+def set_font(
+    font_name: FontName = "Source Sans 3",
+    weight: FontWeight = "book",
+    update_line_thickness: bool = True,
+) -> None:
     """Set the global font family and weight for all plots.
 
     Points font.family directly at the exact static font file for that weight,
@@ -82,18 +97,22 @@ def set_font(font_name: FontName, weight: FontWeight = "regular") -> None:
 
     Args:
         font_name: one of "Noto Sans", "Source Sans 3", "Source Serif 4", "Literata"
-        weight: "light", "regular", or "medium" (default "regular")
+        weight: "light"=300, "regular"=400, "medium"=500, or "book"=350 (default "book")
+        update_line_thickness: whether to update the line thickness of spines and ticks
+            to match the new weight (default True)
     """
     if font_name not in _font_files:
         raise ValueError(
             f"Font '{font_name}' not found. Available fonts: {list(_font_files)}"
         )
-    if weight not in ("light", "regular", "medium"):
+    if weight not in ("light", "regular", "medium", "book"):
         raise ValueError(
-            f"Weight must be 'light', 'regular', or 'medium', got '{weight}'"
+            f"Weight must be 'light', 'regular', 'medium', or 'book', got '{weight}'"
         )
 
     plt.rcParams["font.family"] = f"{font_name} {weight.capitalize()}"
+    if update_line_thickness:
+        _set_spine_and_tick_thickness(weight)
 
 
 def list_fonts() -> list[str]:
@@ -147,7 +166,7 @@ def trim_spines(ax=None, keep_right=False, keep_top=False):
             spine.set_bounds(visible[0], visible[-1])
 
 
-def move_axes_outward(ax=None, pad=10):
+def _move_axes_outward(ax=None, pad=10):
     """
     Move axes outward from the data region (Tufte-inspired styling).
 
@@ -166,28 +185,41 @@ def move_axes_outward(ax=None, pad=10):
         if spine.get_visible():
             spine.set_position(("outward", pad))
 
-    # Keep ticks only on visible spines
-    # ax.yaxis.set_ticks_position("left")
-    # ax.xaxis.set_ticks_position("bottom")
-
-    # Subtle tick styling (important for “breathing room” effect)
-    # ax.tick_params(direction="out", length=4, width=0.8)#, colors="#5e5246")
-
     return ax
 
 
-def style_axes(ax=None, pad=10):
+def style_axes(ax=None, pad=10, trim_axes=True, encompass_data=True):
     """
-    Trim axes to data and move outward from the data"""
+    Trim axes to data and move outward from the data if pad>0.
+
+    If encompass_data is True, also expand axis limits to ensure all data falls within the outermost ticks.
+    Note: this can be buggy when using equal axis aspect (e.g. ax.set_aspect('equal'))
+
+    Args:
+        ax: the axes to style (default: current axes)
+        pad: if >0, move axes outward from the data region by this many points (default: 10)
+        trim_axes: whether to trim axes to the outermost ticks (default: True)
+        encompass_data: whether to expand axis limits to ensure all data falls within the outer
+    """
 
     if ax is None:
         ax = plt.gca()
-    trim_spines(ax)
-    move_axes_outward(ax, pad=pad)
+
+    if pad > 0:
+        _move_axes_outward(ax, pad=pad)
+    if encompass_data:
+        expand_limits(ax)
+    if trim_axes:
+        trim_spines(ax)
     return ax
 
 
 def set_palette(palette):
+    """Set the default color cycle for all plots to a waxwing palette
+
+    Args:
+        palette: either a list of colors or the name of a waxwing palette (e.g. "matcha")
+    """
     if isinstance(palette, str):
         if palette not in palettes.__all__:
             raise ValueError(
@@ -195,6 +227,66 @@ def set_palette(palette):
             )
         palette = getattr(palettes, palette)
     plt.rcParams["axes.prop_cycle"] = mpl.cycler(color=palette)
+
+
+def expand_limits(ax=None):
+    """Adjust axis limits so that all data falls within the outermost ticks.
+
+    Keeps Matplotlib's tick placement unchanged, but extends the limits to the
+    first tick beyond the data range on each side, so no data is ever clipped
+    beyond the last tick mark.
+
+    Call after all data has been plotted and ticks are finalized.
+
+    Args:
+        ax: the axes to adjust (default: current axes)
+    """
+    if ax is None:
+        ax = plt.gca()
+
+    ax.figure.canvas.draw()  # ensure ticks and dataLim are computed
+
+    # dataLim is the true data bounding box, unaffected by axis margins
+
+    # x axis:
+    ticks = ax.get_xticks()
+    if len(ticks) > 2:
+        # last tick at or below data min, first tick at or above data max
+        lo_ticks = [t for t in ticks if t <= ax.dataLim.xmin]
+        hi_ticks = [t for t in ticks if t >= ax.dataLim.xmax]
+        new_lo = max(lo_ticks) if lo_ticks else ticks[0]
+        new_hi = min(hi_ticks) if hi_ticks else ticks[-1]
+        ax.set_xlim(new_lo, new_hi)
+
+    # y axis:
+    ticks = ax.get_yticks()
+    if len(ticks) > 2:
+        # last tick at or below data min, first tick at or above data max
+        lo_ticks = [t for t in ticks if t <= ax.dataLim.ymin]
+        hi_ticks = [t for t in ticks if t >= ax.dataLim.ymax]
+        new_lo = max(lo_ticks) if lo_ticks else ticks[0]
+        new_hi = min(hi_ticks) if hi_ticks else ticks[-1]
+        ax.set_ylim(new_lo, new_hi)
+
+
+def _set_spine_and_tick_thickness(weight):
+    """Set the thickness of axes spines and ticks with name or number
+
+    Args:
+        weight: either a float line width (e.g. 0.5) or a named weight ("light",
+        "regular", "medium", "book")
+    """
+    if isinstance(weight, str):
+        if weight not in ("light", "regular", "medium", "book"):
+            raise ValueError(
+                f"Weight must be float or: 'light', 'regular', 'medium', or 'book', got '{weight}'"
+            )
+        weight = _weight_to_lineweight[weight]
+    plt.rcParams["axes.linewidth"] = weight
+    plt.rcParams["xtick.minor.width"] = weight
+    plt.rcParams["ytick.minor.width"] = weight
+    plt.rcParams["xtick.major.width"] = weight
+    plt.rcParams["ytick.major.width"] = weight
 
 
 def set_default_styles():

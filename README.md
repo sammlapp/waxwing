@@ -137,3 +137,28 @@ ax.set_prop_cycle(color=palettes.spring)
 
 - Python ≥ 3.8
 - matplotlib
+
+## Development
+
+Creating image in readme of current color palettes:
+
+```
+python create_palettes.py
+```
+
+Adding a new font:
+
+Only add fonts with licenses that allow distribution. 
+
+1. Obtain the Variable font or each weight as separate ttf. I select 350 i.e. 'Book' as the default font weight, which is typically not provided but can be created from Variable fonts.
+2. If needed, instance the font into a static .ttf:
+```
+pip install fonttools
+fonttools varLib.instancer \
+  SourceSans3-VariableFont_wght.ttf \
+  wght=350 \
+  -o SourceSans3-Book.ttf
+```
+3. Save copies under fonts/Name/static/[Name]-Light.ttf (or Medium, Regular, etc)
+4. Update  `waxwing.py`: `_font_files` and `FontName` variables with Name and paths to the static font weight files
+

@@ -1,0 +1,1 @@
+fonttools varLib.instancer '/Users/SML161/Downloads/Literata,Noto_Sans,Source_Sans_3,Source_Serif_4/Literata/Literata-VariableFont_opsz,wght.ttf' wght=350 -o Literata-350.ttf

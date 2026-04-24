@@ -19,11 +19,11 @@ __all__ = [
 
 
 wax = [
-    "#e0b94f",  # wax yellow (tail highlight)
-    "#b23a2f",  # wax red (berry accent)
-    "#63a751",  # wax green (leaf accent)
+    "#e0b94f",
+    "#b23a2f",
+    "#63a751",
     "#e59500",
-    "#64b9d3",  # blue
+    "#64b9d3",
     "#825bde",
 ]
 clay = [

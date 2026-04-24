@@ -4,9 +4,8 @@ from .waxwing import (
     list_fonts,
     set_figsize,
     trim_spines,
+    expand_limits,
     set_default_styles,
-    move_axes_outward,
     style_axes,
     set_palette,
-    apply_typography,
 )

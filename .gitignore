@@ -4,3 +4,4 @@ viz_palettes.ipynb
 build/
 waxwing.egg-info/
 dist/
+local_font_cache/
