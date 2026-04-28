@@ -12,7 +12,7 @@ license = { text = "MIT" }
 dependencies = ["matplotlib"]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/waxwing"
+Homepage = "https://github.com/sammlapp/waxwing"
 
 [tool.setuptools.packages.find]
 where = ["."]

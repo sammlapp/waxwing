@@ -19,21 +19,22 @@ import waxwing
 waxwing.set_default_styles()          # apply all defaults at once
 
 fig, ax = plt.subplots()
-ax.plot([1, 2, 3], color=waxwing.palettes.clay[1])
-waxwing.trim_spines(ax)
+ax.plot(x, y)
+waxwing.style_axes(ax)                # trim spines, expand limits, offset axes
 plt.savefig("figure.pdf")
 ```
 
-## Styling
+## API
 
 ### `set_default_styles()`
 
-Applies the full waxwing style in one call:
+Applies the full waxwing style in one call. Call once at the top of your script or notebook.
 
 | Setting | Value |
 |---|---|
-| Font | Source Sans 3, 9 pt |
+| Font | Source Sans 3 Light |
 | Figure size | 6.5 × 3 in (single column, papers) |
+| Color palette | `matcha` |
 | Screen DPI | 150 |
 | Save DPI | 300 |
 | Save bbox | tight |
@@ -41,26 +42,26 @@ Applies the full waxwing style in one call:
 | Top/right spines | removed |
 | Axis margins | 0 |
 
-You can also set individual properties:
+### `style_axes(ax=None, pad=10, trim_axes=True, encompass_data=True)`
 
-```python
-waxwing.set_font("Literata")      # switch to a serif font
-waxwing.set_figsize(3.25, 2.5)    # half-column width
-```
+Call once per axes after all data is plotted. Combines three operations:
 
-### `trim_spines(ax=None, keep_right=False, keep_top=False)`
-
-Clips the left and bottom spines to the outermost tick marks, giving a clean floating-axis look. Call after all data and tick configuration is done.
+- **trim spines** — clips left and bottom spines to the outermost tick marks
+- **expand limits** — extends axis limits so all data falls within the outermost ticks, preserving Matplotlib's tick placement
+- **offset axes** — moves spines outward from the data (`pad` points)
 
 ```python
 fig, ax = plt.subplots()
-ax.plot(x, y)
-waxwing.trim_spines(ax)
+ax.scatter(x, y)
+waxwing.style_axes(ax)
+
+# or with options:
+waxwing.style_axes(ax, pad=5, encompass_data=False)
 ```
 
-### Fonts
+### `set_font(font_name, weight="book")`
 
-Four variable-weight typefaces are bundled and registered automatically on import:
+Each weight is a distinct static font file — no Matplotlib weight-matching heuristics.
 
 | Name | Style |
 |---|---|
@@ -69,11 +70,27 @@ Four variable-weight typefaces are bundled and registered automatically on impor
 | `"Source Serif 4"` | Optical-size serif |
 | `"Literata"` | Literary serif |
 
-```python
-print(waxwing.list_fonts())
-# ['Noto Sans', 'Source Sans 3', 'Source Serif 4', 'Literata']
+Available weights: `"light"`, `"book"`, `"regular"`, `"medium"`
 
-waxwing.set_font("Source Serif 4")
+```python
+waxwing.set_font("Literata", "medium")
+waxwing.set_font("Source Serif 4")        # defaults to "book"
+```
+
+### `set_palette(palette)`
+
+Sets the default color cycle. Accepts a palette name or any list of hex colors.
+
+```python
+waxwing.set_palette("wax")
+waxwing.set_palette(["#e07a5f", "#3d405b", "#81b29a"])
+```
+
+### `set_figsize(w, h)`
+
+```python
+waxwing.set_figsize(3.25, 2.5)    # half-column width
+waxwing.set_figsize(6.5, 4)
 ```
 
 ## Color palettes
@@ -161,4 +178,31 @@ fonttools varLib.instancer \
 ```
 3. Save copies under fonts/Name/static/[Name]-Light.ttf (or Medium, Regular, etc)
 4. Update  `waxwing.py`: `_font_files` and `FontName` variables with Name and paths to the static font weight files
+
+## Publishing to PyPI
+
+### First release
+
+1. Create an account-scoped API token at pypi.org → Account Settings → API tokens
+2. Add a profile to `~/.pypirc`:
+   ```ini
+   [waxwing]
+   repository = https://upload.pypi.org/legacy/
+   username = __token__
+   password = pypi-...
+   ```
+3. Build and upload:
+   ```bash
+   pip install build twine
+   python -m build
+   twine upload --repository waxwing dist/*
+   ```
+4. After the project exists on PyPI, replace the account-scoped token with a project-scoped one (pypi.org → Account Settings → API tokens → Add token, scope to `waxwing`), and update `~/.pypirc`
+
+### Subsequent releases
+
+1. Bump `version` in `pyproject.toml`
+2. Delete the old `dist/` directory
+3. `python -m build`
+4. `twine upload --repository waxwing dist/*`
 
